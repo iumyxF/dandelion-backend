@@ -1,10 +1,7 @@
 package cn.dandelion.project.controller;
 
 import cn.dandelion.project.annotation.AuthCheck;
-import cn.dandelion.project.common.BaseResponse;
-import cn.dandelion.project.common.DeleteRequest;
-import cn.dandelion.project.common.ErrorCode;
-import cn.dandelion.project.common.ResultUtils;
+import cn.dandelion.project.common.*;
 import cn.dandelion.project.constant.CommonConstant;
 import cn.dandelion.project.exception.BusinessException;
 import cn.dandelion.project.model.dto.interfaceinfo.InterfaceInfoAddRequest;
@@ -12,6 +9,7 @@ import cn.dandelion.project.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import cn.dandelion.project.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import cn.dandelion.project.model.entity.InterfaceInfo;
 import cn.dandelion.project.model.entity.User;
+import cn.dandelion.project.model.enums.InterfaceInfoStatusEnum;
 import cn.dandelion.project.service.InterfaceInfoService;
 import cn.dandelion.project.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -24,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 帖子接口
@@ -195,5 +194,57 @@ public class InterfaceInfoController {
     }
 
     // endregion
+
+    /**
+     * 接口上线
+     *
+     * @param updateStatusRequest 状态更新请求体
+     */
+    @PostMapping("/online")
+    public BaseResponse<Boolean> onlineInterfaceInfo(@RequestBody UpdateStatusRequest updateStatusRequest) {
+        //参数判断
+        if (Objects.isNull(updateStatusRequest) || updateStatusRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = updateStatusRequest.getId();
+        //接口是否存在
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (Objects.isNull(interfaceInfo)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        // TODO 接口是否能调用
+        /*
+        要使用client进行判断 改造成SpringCloud用nacos进行调用，或者拆分项目，用dubbo调用
+        starter 封装redis操作、日志、基本的东西
+         */
+
+        //更新接口状态
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.ONLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 接口下线
+     *
+     * @param updateStatusRequest 状态更新请求体
+     */
+    @PostMapping("/offline")
+    public BaseResponse<Boolean> offInterfaceInfo(@RequestBody UpdateStatusRequest updateStatusRequest) {
+        //参数判断
+        if (Objects.isNull(updateStatusRequest) || updateStatusRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = updateStatusRequest.getId();
+        //接口是否存在
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (Objects.isNull(interfaceInfo)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        //更新接口状态
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
 
 }
